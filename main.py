@@ -66,8 +66,8 @@ G = nx.read_edgelist(path+'/graph_df.csv'
 # p = 1, q = 1 为随机游走
 walker = RandomWalker(G, p = 1, q = 1)
 walker.preprocess_transition_probs()
-session_reproduce = walker.simulate_walks(num_walks=5, walk_length=8, workers=4,
-                                          verbose=1)
+session_reproduce = walker.simulate_walks(num_walks=6, walk_length=8, workers=1,
+                                          verbose=2)
 
 session_reproduce = list(filter(lambda x: len(x) > 2 , session_reproduce))
 
@@ -107,7 +107,7 @@ loss = 0
 iteration = 0
 start = time.time()
 batch_size=2048
-epochs=20
+epochs=30
 num_feat=7
 
 # read train_data
