@@ -13,6 +13,10 @@ path=sys.argv[1]
 print('path:------------------',path)
 print(path,"--->step1")
 #step 1------------------------------------------------------------------
+
+all_type={ 'resblockName' : str , 'businessdistrict' : str }
+house_info = pd.read_csv('housepic/house_info.csv', dtype=all_type)
+#print(house_info.dtypes)
 session_list_all = []
 houseidset=set()
 with open(path+'/click.csv', 'r') as f:
@@ -62,7 +66,7 @@ G = nx.read_edgelist(path+'/graph_df.csv'
 # p = 1, q = 1 为随机游走
 walker = RandomWalker(G, p = 1, q = 1)
 walker.preprocess_transition_probs()
-session_reproduce = walker.simulate_walks(num_walks=1, walk_length=6, workers=4,
+session_reproduce = walker.simulate_walks(num_walks=5, walk_length=8, workers=4,
                                           verbose=1)
 
 session_reproduce = list(filter(lambda x: len(x) > 2 , session_reproduce))
@@ -84,16 +88,17 @@ np.savetxt(path+"/all_pairs", X=all_pairs, fmt="%d", delimiter=" ")
 ##step 3------------------------------------------------------------------------
 print(path,"--->step3")
 # add side info
-house_info = pd.read_csv('housepic/house_info.csv')
-all_info = pd.merge(all_houseid, house_info, on='invNo', how='left').fillna(0)
-
+all_info = pd.merge(all_houseid, house_info, on='invNo', how='left').fillna("0")
+#print(all_info.dtypes)
 for feat in all_info.columns:
         if feat != 'invNo' and  feat!='houseid':
+            #print('name--------->',feat)
+            #print(all_info[feat].unique())
             lbe = LabelEncoder()
             all_info[feat] = lbe.fit_transform(all_info[feat])
 
-all_info.to_csv(path+'/houseid_info.csv', index=False, header=False, sep='\t', columns=['houseid','priceRange','resblockName','businessdistrict','subwayStation','subwayLine','houseType'])
-
+all_info.to_csv(path+'/houseid_info.csv', index=False, header=False, sep='\t', columns=['invNo', 'houseid','priceRange','resblockName','businessdistrict','subwayStation','subwayLine','houseType'])
+#print(all_info)
 ##step 4------------------------------------------------------------------------
 
 print(path,"--->step4")
@@ -102,13 +107,16 @@ loss = 0
 iteration = 0
 start = time.time()
 batch_size=2048
-epochs=10
+epochs=20
 num_feat=7
 
 # read train_data
-print('read features...')
+#print('read features...')
 start_time = time.time()
 side_info = np.loadtxt(path+'/houseid_info.csv', dtype=np.int32, delimiter='\t')
+#print(side_info)
+side_info = np.delete(side_info, 0, axis=1)
+#print(side_info)
 all_pairs = np.loadtxt(path+'/all_pairs', dtype=np.int32, delimiter=' ')
 feature_lens = []
 for i in range(side_info.shape[1]):
@@ -117,7 +125,7 @@ for i in range(side_info.shape[1]):
 end_time = time.time()
 print('time consumed for read features: %.2f' % (end_time - start_time))
 
-EGES = EGES_Model(len(side_info), num_feat, feature_lens, n_sampled=10, embedding_dim=32,
+EGES = EGES_Model(len(side_info), num_feat, feature_lens, n_sampled=10, embedding_dim=16,
                   lr=0.001)
 
 # init model
